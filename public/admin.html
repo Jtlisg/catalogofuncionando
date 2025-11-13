@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Panel de Productos</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<!-- Contenedor de notificaciones (siempre visible, incluso en login) -->
+<div id="notificaciones-container" class="notificaciones-container"></div>
+
+<!-- Navegación -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-logo">
+            <span class="logo-icon">⚙️</span> Panel Admin
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html" class="nav-link">Volver al inicio</a></li>
+            <li><a href="#" id="btnCerrarSesion" class="nav-link">Cerrar sesión</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Pantalla de Login (oculta cuando está autenticado) -->
+<div id="login-screen" class="login-screen activa">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">🔐</div>
+            <h1>Panel de Administración</h1>
+            <p>Ingresa la contraseña para acceder</p>
+            <form id="formLogin">
+                <input type="password" id="passwordInput" placeholder="Contraseña" required>
+                <button type="submit" class="btn-login">Acceder</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Panel Admin (oculto hasta autenticarse) -->
+<div id="admin-panel" class="admin-panel oculto">
+    <div class="admin-section">
+        <h1>Gestión de Productos</h1>
+        <!-- Controles de filtro / búsqueda para admin -->
+        <div class="productos-filtros" style="margin-bottom:1.5rem;">
+            <div class="filtro">
+                <label for="filtroCategoria">Categoría</label>
+                <select id="filtroCategoria">
+                    <option value="all">Todas</option>
+                </select>
+            </div>
+            <div class="busqueda" style="flex:1;">
+                <input id="busquedaAdmin" type="search" placeholder="🔍 Buscar productos (nombre, categoría, precio)">
+            </div>
+            <div style="display:flex;align-items:end;gap:0.5rem;">
+                <button id="btnLimpiarFiltros" class="btn-limpiar">Limpiar</button>
+            </div>
+        </div>
+
+        <div id="catalogo" class="catalogo"></div>
+
+        <section class="admin-form">
+            <h2>Agregar / Editar Producto</h2>
+            
+            <!-- Sección de carga de imagen -->
+            <div class="admin-imagen-section">
+                <h3>Imagen del Producto</h3>
+                <div class="admin-imagen-container">
+                    <div id="previewImagen" class="imagen-preview">
+                        <img id="imgPreview" src="" alt="Vista previa" style="display:none;">
+                        <span id="imagenPlaceholder">📸 Vista previa</span>
+                    </div>
+                    <div class="admin-imagen-controls">
+                        <input type="file" id="imagenFile" accept="image/*" placeholder="Selecciona una imagen">
+                        <button type="button" id="btnSubirImagen" class="btn-subir-imagen">📤 Subir imagen</button>
+                        <p id="estadoImagen" class="estado-imagen"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="formProducto">
+                <input type="text" id="nombre" placeholder="Nombre producto" required>
+                <input type="text" id="categoria" placeholder="Categoría" required>
+                <input type="number" id="precio" placeholder="Precio" required>
+                <input type="hidden" id="imagen" value="">
+                <button type="submit">Agregar / Actualizar</button>
+            </form>
+        </section>
+    </div>
+</div>
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>Mi Catálogo</h4>
+            <p>Tu tienda de confianza para productos de calidad</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 Mi Catálogo. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<script  src="js/admin.js"></script>
+</body>
+</html>

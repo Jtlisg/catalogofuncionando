@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Productos - Mi Catálogo</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<!-- Navegación -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-logo">
+            <span class="logo-icon">🛍️</span> Mi Catálogo
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html" class="nav-link">Inicio</a></li>
+            <li><a href="productos.html" class="nav-link">Productos</a></li>
+            <li><a href="index.html#contactanos" class="nav-link">Contáctanos</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main>
+    <!-- Sección Productos -->
+    <section class="productos-page">
+        <div class="productos-header">
+            <h1>🛍️ Nuestros Productos</h1>
+            <div class="productos-filtros">
+                <div class="filtro">
+                    <label for="filtroCategoria">Categoría</label>
+                    <select id="filtroCategoria">
+                        <option value="Todas">Todos</option>
+                    </select>
+                </div>
+                <div class="busqueda">
+                    <input type="text" id="buscador" placeholder="Buscar producto...">
+                </div>
+                <div style="display:flex;align-items:end;gap:0.5rem;">
+                    <button id="btnLimpiarFiltrosProducts" class="btn-limpiar">Limpiar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de productos -->
+        <div id="categorias" class="productos-container"></div>
+
+        <!-- Carrito -->
+        <section class="carrito">
+            <h2>🛒 Carrito de Compras</h2>
+            <div id="carrito"></div>
+            <button id="enviarWhatsApp" class="btn-whatsapp">Enviar pedido por WhatsApp</button>
+        </section>
+    </section>
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>Mi Catálogo</h4>
+            <p>Tu tienda de confianza para productos de calidad</p>
+        </div>
+        <div class="footer-section">
+            <h4>Enlaces</h4>
+            <ul>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="productos.html">Productos</a></li>
+                <li><a href="index.html#contactanos">Contáctanos</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Síguenos</h4>
+            <div class="social-links">
+                <a href="https://wa.me/50493694250" target="_blank">WhatsApp</a>
+                <a href="mailto:info@micatalogo.com">Email</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 Mi Catálogo. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<script  src="js/catalogo.js"></script>
+</body>
+</html>

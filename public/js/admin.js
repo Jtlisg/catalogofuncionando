@@ -262,3 +262,8 @@ btnLimpiarFiltros.addEventListener("click", e => {
     busquedaAdmin.value = '';
     aplicarFiltros();
 });
+
+
+// Hacer accesibles las funciones desde el HTML
+window.editarProducto = editarProducto;
+window.eliminarProducto = eliminarProducto;

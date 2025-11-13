@@ -1,9 +1,11 @@
+// -------------------- IMPORTS --------------------
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_KEY } from "./config.js";
 
-// Inicializar Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// -------------------- INICIALIZAR SUPABASE --------------------
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
+// -------------------- VARIABLES --------------------
 let productos = [];
 let editandoId = null;
 
@@ -110,8 +112,7 @@ function mostrarNotificacion(mensaje, tipo = 'exito', duracion = 3000) {
 formLogin.addEventListener("submit", (e) => {
     e.preventDefault();
     const password = passwordInput.value.trim();
-    if(password === ADMIN_KEY){  // Cambia esto según tu contraseña
-        ADMIN_KEY = password;
+    if(password === ADMIN_KEY){  // Ahora usa la clave del config.js
         loginScreen.classList.add("oculto");
         adminPanel.classList.remove("oculto");
         mostrarNotificacion("Bienvenido al panel", "exito");
@@ -251,6 +252,7 @@ formProducto.addEventListener("submit", async (e) => {
     cargarProductos();
 });
 
+// Filtros
 filtroCategoria.addEventListener("change", aplicarFiltros);
 busquedaAdmin.addEventListener("input", aplicarFiltros);
 btnLimpiarFiltros.addEventListener("click", e => {

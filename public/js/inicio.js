@@ -1,7 +1,9 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_KEY } from "./config.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
-// Inicializar Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inicializar Supabase correctamente
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
 let productos = [];
 

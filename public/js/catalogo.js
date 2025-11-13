@@ -18,7 +18,7 @@ const btnLimpiarFiltrosProducts = document.getElementById("btnLimpiarFiltrosProd
 async function cargarProductos() {
     const { data, error } = await supabase
         .storage
-        .from("productos")
+        .from("json")
         .download("productos.json");
 
     if (error && error.status !== 406) {

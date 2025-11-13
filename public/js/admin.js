@@ -48,9 +48,9 @@ imagenFile.addEventListener("change", e => {
 // Sanitizar nombres de archivo
 function sanitizeFileName(name) {
     return name
-        .normalize('NFD')                 // Quita acentos
+        .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9._-]/g, '_'); // Reemplaza todo lo demás por "_"
+        .replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 // Subir imagen a Supabase y devolver URL pública
@@ -107,7 +107,7 @@ formLogin.addEventListener("submit", (e) => {
 
 // -------------------- CRUD PRODUCTOS --------------------
 
-// Leer productos desde JSON en Supabase
+// Cargar productos desde Supabase
 async function cargarProductos() {
     try {
         const { data, error } = await supabase
@@ -133,16 +133,40 @@ async function cargarProductos() {
     }
 }
 
-// Guardar productos en JSON en Supabase
+// Guardar productos sin sobrescribir
 async function guardarProductos() {
-    const blob = new Blob([JSON.stringify(productos, null, 2)], { type: "application/json" });
-    const { error } = await supabase
-        .storage
-        .from("json")
-        .upload("productos.json", blob, { upsert: true });
+    try {
+        const { data, error } = await supabase
+            .storage
+            .from("json")
+            .download("productos.json");
 
-    if(error) {
-        console.error("Error guardando productos:", error);
+        let productosActuales = [];
+        if (data) {
+            const text = await data.text();
+            productosActuales = JSON.parse(text || "[]");
+        }
+
+        // Eliminar producto editado (si aplica)
+        if (editandoId) {
+            productosActuales = productosActuales.filter(p => p.id !== editandoId);
+        }
+
+        // Fusionar productos existentes con los de memoria
+        productosActuales.push(...productos.filter(p => !productosActuales.some(pa => pa.id === p.id)));
+
+        const blob = new Blob([JSON.stringify(productosActuales, null, 2)], { type: "application/json" });
+        const { error: uploadError } = await supabase
+            .storage
+            .from("json")
+            .upload("productos.json", blob, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        productos = productosActuales;
+
+    } catch (err) {
+        console.error("Error guardando productos:", err);
         mostrarNotificacion("Error guardando productos", "error");
     }
 }
@@ -241,7 +265,11 @@ async function eliminarProducto(id) {
     cargarProductos();
 }
 
-// Agregar/Actualizar producto
+// Hacer accesibles las funciones desde el HTML
+window.editarProducto = editarProducto;
+window.eliminarProducto = eliminarProducto;
+
+// -------------------- AGREGAR/EDITAR PRODUCTO --------------------
 formProducto.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -269,15 +297,19 @@ formProducto.addEventListener("submit", async (e) => {
 
         await guardarProductos();
         formProducto.reset();
+        imgPreview.style.display = "none";
+        imagenPlaceholder.style.display = "block";
         mostrarNotificacion("Producto guardado", "exito");
+
         cargarProductos();
+
     } catch(err) {
         console.error("Error guardando producto:", err);
         mostrarNotificacion(`Error: ${err.message}`, "error");
     }
 });
 
-// Filtros
+// -------------------- FILTROS --------------------
 filtroCategoria.addEventListener("change", aplicarFiltros);
 busquedaAdmin.addEventListener("input", aplicarFiltros);
 btnLimpiarFiltros.addEventListener("click", e => {
@@ -286,7 +318,3 @@ btnLimpiarFiltros.addEventListener("click", e => {
     busquedaAdmin.value = '';
     aplicarFiltros();
 });
-
-// Hacer accesibles las funciones desde el HTML
-window.editarProducto = editarProducto;
-window.eliminarProducto = eliminarProducto;

@@ -109,27 +109,28 @@ formLogin.addEventListener("submit", (e) => {
 
 // Leer productos desde JSON en Supabase
 async function cargarProductos() {
-    const { data, error } = await supabase
-        .storage
-        .from("json")
-        .download("productos.json");
+    try {
+        const { data, error } = await supabase
+            .storage
+            .from("json")
+            .download("productos.json");
 
-    if (error && error.status !== 406) {
+        if (error && error.status !== 406) throw error;
+
+        if(data){
+            const text = await data.text();
+            productos = JSON.parse(text || "[]");
+        } else {
+            productos = [];
+        }
+
+        actualizarCategorias();
+        aplicarFiltros();
+    } catch (err) {
+        console.error("Error al cargar productos:", err);
+        productos = [];
         mostrarNotificacion("Error al cargar productos", "error");
-        console.error(error);
-        productos = [];
-        return;
     }
-
-    if(data){
-        const text = await data.text();
-        productos = JSON.parse(text || "[]");
-    } else {
-        productos = [];
-    }
-
-    actualizarCategorias();
-    aplicarFiltros();
 }
 
 // Guardar productos en JSON en Supabase

@@ -133,27 +133,29 @@ async function cargarProductos() {
     }
 }
 
-// Guardar productos sin sobrescribir
+// Guardar productos (manteniendo todos)
 async function guardarProductos() {
     try {
-        const { data, error } = await supabase
+        const { data } = await supabase
             .storage
             .from("json")
             .download("productos.json");
 
         let productosActuales = [];
-        if (data) {
+        if(data){
             const text = await data.text();
             productosActuales = JSON.parse(text || "[]");
         }
 
-        // Eliminar producto editado (si aplica)
-        if (editandoId) {
-            productosActuales = productosActuales.filter(p => p.id !== editandoId);
-        }
-
-        // Fusionar productos existentes con los de memoria
-        productosActuales.push(...productos.filter(p => !productosActuales.some(pa => pa.id === p.id)));
+        // Fusionar: reemplaza editados y agrega nuevos
+        productos.forEach(p => {
+            const idx = productosActuales.findIndex(pa => pa.id === p.id);
+            if(idx !== -1){
+                productosActuales[idx] = p;
+            } else {
+                productosActuales.push(p);
+            }
+        });
 
         const blob = new Blob([JSON.stringify(productosActuales, null, 2)], { type: "application/json" });
         const { error: uploadError } = await supabase
@@ -161,17 +163,17 @@ async function guardarProductos() {
             .from("json")
             .upload("productos.json", blob, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if(uploadError) throw uploadError;
 
         productos = productosActuales;
 
-    } catch (err) {
+    } catch(err){
         console.error("Error guardando productos:", err);
         mostrarNotificacion("Error guardando productos", "error");
     }
 }
 
-// Subir imagen desde el botón (solo admin)
+// Subir imagen desde botón (solo admin)
 btnSubirImagen.addEventListener("click", async () => {
     if (!imagenFile.files[0]) {
         estadoImagen.textContent = "Selecciona una imagen primero";
@@ -265,56 +267,6 @@ async function eliminarProducto(id) {
     cargarProductos();
 }
 
-// Hacer accesibles las funciones desde el HTML
+// Hacer accesibles las funciones desde HTML
 window.editarProducto = editarProducto;
 window.eliminarProducto = eliminarProducto;
-
-// -------------------- AGREGAR/EDITAR PRODUCTO --------------------
-formProducto.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    try {
-        let urlImagen = imagenInput.value;
-        if(imagenFile.files[0]) {
-            urlImagen = await subirImagen(imagenFile.files[0]);
-        }
-
-        const nuevoProducto = {
-            id: editandoId || Date.now(),
-            nombre: nombreInput.value,
-            categoria: categoriaInput.value,
-            precio: parseFloat(precioInput.value),
-            imagen: urlImagen || "https://via.placeholder.com/150"
-        };
-
-        if(editandoId){
-            const idx = productos.findIndex(p => p.id===editandoId);
-            productos[idx] = nuevoProducto;
-            editandoId = null;
-        } else {
-            productos.push(nuevoProducto);
-        }
-
-        await guardarProductos();
-        formProducto.reset();
-        imgPreview.style.display = "none";
-        imagenPlaceholder.style.display = "block";
-        mostrarNotificacion("Producto guardado", "exito");
-
-        cargarProductos();
-
-    } catch(err) {
-        console.error("Error guardando producto:", err);
-        mostrarNotificacion(`Error: ${err.message}`, "error");
-    }
-});
-
-// -------------------- FILTROS --------------------
-filtroCategoria.addEventListener("change", aplicarFiltros);
-busquedaAdmin.addEventListener("input", aplicarFiltros);
-btnLimpiarFiltros.addEventListener("click", e => {
-    e.preventDefault();
-    filtroCategoria.value = 'all';
-    busquedaAdmin.value = '';
-    aplicarFiltros();
-});

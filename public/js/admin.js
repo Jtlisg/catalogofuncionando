@@ -2,8 +2,9 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_KEY } from "./config.js";
 
-// -------------------- INICIALIZAR SUPABASE --------------------
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
 
 // -------------------- VARIABLES --------------------
 let productos = [];
@@ -129,7 +130,7 @@ formLogin.addEventListener("submit", (e) => {
 async function cargarProductos() {
     const { data, error } = await supabase
         .storage
-        .from("productos")
+        .from("json")
         .download("productos.json");
 
     if (error && error.status !== 406) {
@@ -154,7 +155,7 @@ async function guardarProductos() {
     const blob = new Blob([JSON.stringify(productos, null, 2)], { type: "application/json" });
     const { error } = await supabase
         .storage
-        .from("productos")
+        .from("json")
         .upload("productos.json", blob, { upsert: true });
 
     if(error) console.error(error);

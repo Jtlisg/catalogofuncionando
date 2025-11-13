@@ -4,8 +4,6 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_KEY } from "./config.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-
 // -------------------- VARIABLES --------------------
 let productos = [];
 let editandoId = null;
@@ -47,52 +45,35 @@ imagenFile.addEventListener("change", e => {
     reader.readAsDataURL(file);
 });
 
-// Subir imagen a Supabase Storage
-btnSubirImagen.addEventListener("click", async () => {
-    if (!imagenFile.files[0]) {
-        estadoImagen.textContent = "Selecciona una imagen primero";
-        estadoImagen.classList.add("error");
-        return;
-    }
+// Sanitizar nombres de archivo
+function sanitizeFileName(name) {
+    return name
+        .normalize('NFD')                 // Quita acentos
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]/g, '_'); // Reemplaza todo lo demás por "_"
+}
 
-    const file = imagenFile.files[0];
-    const fileName = `${Date.now()}_${file.name}`;
-
+// Subir imagen a Supabase y devolver URL pública
+async function subirImagen(file) {
+    const fileName = `${Date.now()}_${sanitizeFileName(file.name)}`;
     try {
-        estadoImagen.textContent = "Subiendo...";
-        estadoImagen.classList.remove("error", "exito");
-
         const { data, error } = await supabase
             .storage
             .from("images")
-            .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
+            .upload(fileName, file, { cacheControl: "3600", upsert: true });
         if (error) throw error;
 
-        const { publicUrl, error: urlError } = supabase
+        const { publicUrl } = supabase
             .storage
             .from("images")
             .getPublicUrl(fileName);
 
-        if (urlError) throw urlError;
-
-        imagenInput.value = publicUrl;
-        estadoImagen.textContent = "✅ Imagen subida correctamente";
-        estadoImagen.classList.add("exito");
-        imagenFile.value = "";
-
-        setTimeout(() => {
-            imgPreview.style.display = "none";
-            imagenPlaceholder.style.display = "block";
-            estadoImagen.textContent = "";
-            estadoImagen.classList.remove("exito");
-        }, 2000);
+        return publicUrl;
     } catch (err) {
-        console.error("Error al subir imagen:", err);
-        estadoImagen.textContent = `❌ ${err.message}`;
-        estadoImagen.classList.add("error");
+        console.error("Error subiendo imagen:", err);
+        throw err;
     }
-});
+}
 
 // Mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = 'exito', duracion = 3000) {
@@ -113,7 +94,7 @@ function mostrarNotificacion(mensaje, tipo = 'exito', duracion = 3000) {
 formLogin.addEventListener("submit", (e) => {
     e.preventDefault();
     const password = passwordInput.value.trim();
-    if(password === ADMIN_KEY){  // Ahora usa la clave del config.js
+    if(password === ADMIN_KEY){
         loginScreen.classList.add("oculto");
         adminPanel.classList.remove("oculto");
         mostrarNotificacion("Bienvenido al panel", "exito");
@@ -126,7 +107,7 @@ formLogin.addEventListener("submit", (e) => {
 
 // -------------------- CRUD PRODUCTOS --------------------
 
-// Cargar productos desde Supabase JSON
+// Leer productos desde JSON en Supabase
 async function cargarProductos() {
     const { data, error } = await supabase
         .storage
@@ -136,6 +117,7 @@ async function cargarProductos() {
     if (error && error.status !== 406) {
         mostrarNotificacion("Error al cargar productos", "error");
         console.error(error);
+        productos = [];
         return;
     }
 
@@ -150,7 +132,7 @@ async function cargarProductos() {
     aplicarFiltros();
 }
 
-// Guardar productos en Supabase JSON
+// Guardar productos en JSON en Supabase
 async function guardarProductos() {
     const blob = new Blob([JSON.stringify(productos, null, 2)], { type: "application/json" });
     const { error } = await supabase
@@ -158,10 +140,40 @@ async function guardarProductos() {
         .from("json")
         .upload("productos.json", blob, { upsert: true });
 
-    if(error) console.error(error);
+    if(error) {
+        console.error("Error guardando productos:", error);
+        mostrarNotificacion("Error guardando productos", "error");
+    }
 }
 
-// Mostrar productos
+// Subir imagen desde el botón (solo admin)
+btnSubirImagen.addEventListener("click", async () => {
+    if (!imagenFile.files[0]) {
+        estadoImagen.textContent = "Selecciona una imagen primero";
+        estadoImagen.classList.add("error");
+        return;
+    }
+    try {
+        estadoImagen.textContent = "Subiendo...";
+        estadoImagen.classList.remove("error", "exito");
+        const url = await subirImagen(imagenFile.files[0]);
+        imagenInput.value = url;
+        estadoImagen.textContent = "✅ Imagen subida correctamente";
+        estadoImagen.classList.add("exito");
+        imagenFile.value = "";
+        setTimeout(() => {
+            imgPreview.style.display = "none";
+            imagenPlaceholder.style.display = "block";
+            estadoImagen.textContent = "";
+            estadoImagen.classList.remove("exito");
+        }, 2000);
+    } catch (err) {
+        estadoImagen.textContent = `❌ ${err.message}`;
+        estadoImagen.classList.add("error");
+    }
+});
+
+// Mostrar productos en pantalla
 function mostrarProductos(lista = productos) {
     catalogo.innerHTML = "";
     if(!lista.length) {
@@ -188,7 +200,7 @@ function mostrarProductos(lista = productos) {
     });
 }
 
-// Actualiza select categorías
+// Actualiza select de categorías
 function actualizarCategorias() {
     const cats = Array.from(new Set(productos.map(p => p.categoria))).filter(Boolean).sort();
     filtroCategoria.innerHTML = '<option value="all">Todas</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -231,26 +243,37 @@ async function eliminarProducto(id) {
 // Agregar/Actualizar producto
 formProducto.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const nuevoProducto = {
-        id: editandoId || Date.now(),
-        nombre: nombreInput.value,
-        categoria: categoriaInput.value,
-        precio: parseFloat(precioInput.value),
-        imagen: imagenInput.value || "https://via.placeholder.com/150"
-    };
 
-    if(editandoId){
-        const idx = productos.findIndex(p => p.id===editandoId);
-        productos[idx] = nuevoProducto;
-        editandoId = null;
-    } else {
-        productos.push(nuevoProducto);
+    try {
+        let urlImagen = imagenInput.value;
+        if(imagenFile.files[0]) {
+            urlImagen = await subirImagen(imagenFile.files[0]);
+        }
+
+        const nuevoProducto = {
+            id: editandoId || Date.now(),
+            nombre: nombreInput.value,
+            categoria: categoriaInput.value,
+            precio: parseFloat(precioInput.value),
+            imagen: urlImagen || "https://via.placeholder.com/150"
+        };
+
+        if(editandoId){
+            const idx = productos.findIndex(p => p.id===editandoId);
+            productos[idx] = nuevoProducto;
+            editandoId = null;
+        } else {
+            productos.push(nuevoProducto);
+        }
+
+        await guardarProductos();
+        formProducto.reset();
+        mostrarNotificacion("Producto guardado", "exito");
+        cargarProductos();
+    } catch(err) {
+        console.error("Error guardando producto:", err);
+        mostrarNotificacion(`Error: ${err.message}`, "error");
     }
-
-    await guardarProductos();
-    formProducto.reset();
-    mostrarNotificacion("Producto guardado", "exito");
-    cargarProductos();
 });
 
 // Filtros
@@ -262,7 +285,6 @@ btnLimpiarFiltros.addEventListener("click", e => {
     busquedaAdmin.value = '';
     aplicarFiltros();
 });
-
 
 // Hacer accesibles las funciones desde el HTML
 window.editarProducto = editarProducto;

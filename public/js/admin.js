@@ -64,14 +64,14 @@ btnSubirImagen.addEventListener("click", async () => {
 
         const { data, error } = await supabase
             .storage
-            .from("imagenes")
+            .from("images")
             .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
         if (error) throw error;
 
         const { publicUrl, error: urlError } = supabase
             .storage
-            .from("imagenes")
+            .from("images")
             .getPublicUrl(fileName);
 
         if (urlError) throw urlError;
